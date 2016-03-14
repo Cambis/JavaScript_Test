@@ -1,0 +1,13 @@
+extends ../node_modules/jade-bootstrap/_bootstrap 
+
+head
+  title = title
+block body
+  +navbar("The Colenso Project", "dropdown_menu")
+    +nav_item("/", "active") Home
+    +nav_item("/results") Search Archives
+  .container
+    h1 #{title}
+    +input-group()
+      +input("text", "txtName", "Please enter a search query", "")
+      +icon-btn("search")
