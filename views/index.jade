@@ -1,0 +1,19 @@
+// extends layout
+
+// block content
+//   h1= title
+//   p Welcome to #{title}
+
+extends ../node_modules/jade-bootstrap/_bootstrap
+
+head
+  title=title
+block body
+  +navbar("The Colenso Project", "dropdown_menu")
+    +nav_item("/", "active") Home
+    +nav_item("/list") Stock
+  .container
+    h1 #{title}
+      .container
+    p| Welcome to #{title}. Aww gummon what a crack up.
+     | We are based in #{place}.
