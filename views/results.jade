@@ -2,19 +2,24 @@ extends ../node_modules/jade-bootstrap/_bootstrap
 
 head
   title = title
+  srch = srch
 block body
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/", "active") Home
+    +nav_item("/results") Search Text
     +nav_item("/xquery") XQuery
+  .container
+    h1 #{srch}
   .container
     h1 #{title}
     .container
     .col-md-10
         form.navbar-form(role='search')
           .input-group.add-on
-            input#srch-term.form-control(type='text', placeholder='Search', name='srch-term')
+            input#srch.form-control(type='text', placeholder='Search', name='srch')
             |       
             .input-group-btn
               button.btn.btn-default(type='submit')
                 i.glyphicon.glyphicon-search
+     
 
