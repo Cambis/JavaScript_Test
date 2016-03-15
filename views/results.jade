@@ -5,9 +5,16 @@ head
 block body
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/", "active") Home
-    +nav_item("/results") Search Archives
+    +nav_item("/xquery") XQuery
   .container
     h1 #{title}
-    +input-group()
-      +input("text", "txtName", "Please enter a search query", "")
-      +icon-btn("search")
+    .container
+    .col-md-10
+        form.navbar-form(role='search')
+          .input-group.add-on
+            input#srch-term.form-control(type='text', placeholder='Search', name='srch-term')
+            |       
+            .input-group-btn
+              button.btn.btn-default(type='submit')
+                i.glyphicon.glyphicon-search
+
