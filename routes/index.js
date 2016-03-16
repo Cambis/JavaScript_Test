@@ -26,15 +26,15 @@ client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/n
 
 /* SEARCH. */
 router.get('/results', function(req, res, next) {
-  client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" +
-  " (//name[@type='place'])[1]",
+  client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
+  "(collection('Colenso/private_letters')//tei:p[position() = 1])",
   function(error, result) {
     if (error)
       console.log(error);
     else
       console.log(result.result);
+    res.render('results', { title: 'Search Archives', place: result.result, srch: req.query.srch});
   });
-  res.render('results', { title: 'Search Archives', srch: req.query.srch});
 });
 
 /* XQUERY */
