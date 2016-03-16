@@ -11,10 +11,22 @@ block body
     +nav_item("/xquery") XQuery
   .container
     h1 #{title}
-    .container
+  .container
     .col-md-10
         form.navbar-form(role='search')
-          .input-group.add-on
+          .input-group
+            .input-group-btn
+              button.btn.btn-default.dropdown-toggle(type='button', data-toggle='dropdown', aria-haspopup='true', aria-expanded='false')
+                | Search Type 
+                span.caret
+              |         
+              ul.dropdown-menu
+                li
+                  a(href='#') Plain Text
+                |           
+                li
+                  a(href='#') XQuery
+                |                 
             input#srch.form-control(type='text', placeholder='Search', name='srch')
             |       
             .input-group-btn
@@ -23,3 +35,6 @@ block body
   .container
     +panel-default("Results")
       p #{place}
+
+  //
+  
