@@ -1,14 +1,14 @@
 extends ../node_modules/jade-bootstrap/_bootstrap 
 
 head
-  title= title
-  srch= srch
-  place= place
+  title = title
+  srch = srch
+  res = res
 block body
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/", "active") Home
-    +nav_item("/results") Search Text
-    +nav_item("/xquery") XQuery
+    +nav_item("/browse") Browse
+    +nav_item("/results") Search
   .container
     h1 #{title}
   .container
@@ -33,8 +33,12 @@ block body
               button.btn.btn-default(type='submit')
                 i.glyphicon.glyphicon-search
   .container
-    +panel-default("Results")
-      p #{place}
+    .panel.panel-default
+      .panel.heading #{title}
+      .panel-body
+        .list-group
+          each button_id, i in res
+            a.list-group-item(href="#{button_id}") #{button_id} 
 
   //
   
