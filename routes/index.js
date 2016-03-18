@@ -74,6 +74,8 @@ router.get("/browse", function(req, res, next) {
   //db:list('Colenso_TEIs', path);
   
   var path = req.query.path;
+  var authors = [];
+  var paths = [];
   
   if (!path)
     path = " distinct-values (//author/name[@type='person']/text())";
@@ -87,36 +89,40 @@ router.get("/browse", function(req, res, next) {
     else
       console.error(error);
     
-    var authors = result.result.split("\n");
-    var paths = [];
-    
-    for (i = 0; i < authors.length; i++) {
-      console.log("AUTHOR BROWSE: " + authors[i]);
-      paths.push(findPathOfAuthor(authors[i]));
-      console.log("PATH: " + paths[i]);
-    }
-    
-    res.render('browse', { title: 'Browse', authors: authors, paths: paths });
+    authors = result.result.split("\n");
   });
+  
+  for (i = 0; i < authors.length; i++) {
+    console.log("AUTHOR BROWSE: " + authors[i]);
+    paths.push(findPathOfAuthor(authors[i]));
+    console.log("PATH BROWSE: " + findPathOfAuthor(authors[i]));
+  }
+  
+  res.render('list', { title: 'Browse', authors: authors, paths: paths });
 });
 
 function findPathOfAuthor(author) {
   
   console.log("AUTHOR: " + author);
   
-  path = "for $n in (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())\n" +
+  path = "for $n in (//title[../author/name[@type='person' and .='" + author + "']]/text())\n" +
 "return db:path($n)"
+
+  console.log("PATH: " + path);
   
   client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" +
   path, 
   function(error, result) {
+    console.log("SEARCHINGS... ");
     if (!error) {
       console.log("IN HERE");
       var beh = result.result.split("\n")
       var eh = beh[0].split("/");
-      console.log(eh[0]);
-      return beh[0];
+      console.log("EH: " + eh[0]);
+      return eh[0];
     }
+    if (error) 
+      console.log("HOLY SHIT, HOLY SHIT " + error);
   });
   
   console.log("Got here");
