@@ -3,6 +3,7 @@ var router = express.Router();
 var cheerio = require('cheerio');
 var basex = require('basex');
 var client = new basex.Session("127.0.0.1", 1984, "admin", "admin");
+var url = 
 
 /* GET home page. */
 // router.get('/', function(req, res, next) {
@@ -33,9 +34,9 @@ router.get('/results', function(req, res, next) {
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
-  console.log("INPUT: " + input);
+  console.log("INPUT: " + input + " " + fullUrl(req));
   
-  // If there is a search
+//   // If there is a search
   if (input != null && input.length > 0) {
     client.execute(input,
     
@@ -57,16 +58,6 @@ router.get('/results', function(req, res, next) {
   }
   
 });
-
-/* Decode user input for xquery */
-function decodeInput(input) {
-  // TODO
-  
-  // if (input == null || input.length <= 0)
-  //   return "LIST .";
-
-  return input;
-}
 
 /* BROWSE */
 router.get("/browse", function(req, res, next) {
@@ -129,6 +120,33 @@ function findPathOfAuthor(author) {
   return path;
 }
 
-http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
+// http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
+
+/* HELPER FUNCTIONS */
+
+var url = require('url');
+
+/* Find the URL of a request */
+function fullUrl(req) {
+  return url.format({
+    protocol: req.protocol,
+    host: req.get('host'),
+    pathname: req.originalUrl
+  });
+}
+
+function decodeInput(search) {
+  if (isXQuery(search))
+    return search;
+  
+  // TODO need to change this for plain text
+  return search;
+}
+
+/* Decode the search to see if it is xquery */
+function isXQuery(search) {
+  var urlArray = search.split("#");
+  return urlArray.length > 2 && (urlArray.indexOf(search) > -1);
+}
 
 module.exports = router;
