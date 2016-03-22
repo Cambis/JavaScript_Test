@@ -6,9 +6,9 @@ head
   res = res
 block body
   +navbar("The Colenso Project", "dropdown_menu")
-    +nav_item("/", "active") Home
+    +nav_item("/") Home
     +nav_item("/browse") Browse
-    +nav_item("/results") Search
+    +nav_item("/results", "active") Search
   .container
     h1 #{title}
   .container
@@ -37,7 +37,7 @@ block body
       .panel.heading #{title}
       .panel-body
         .list-group
-          each button_id, i in res
+          each button_id in res
             a.list-group-item(href="#{button_id}") #{button_id} 
 
   //

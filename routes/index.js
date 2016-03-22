@@ -3,7 +3,7 @@ var router = express.Router();
 var cheerio = require('cheerio');
 var basex = require('basex');
 var client = new basex.Session("127.0.0.1", 1984, "admin", "admin");
-var url = 
+var url = require('url');
 
 /* GET home page. */
 // router.get('/', function(req, res, next) {
@@ -34,11 +34,15 @@ router.get('/results', function(req, res, next) {
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
-  console.log("INPUT: " + input + " " + fullUrl(req));
+  console.log("INPUT: " + input + " URL: " + fullUrl(req));
   
 //   // If there is a search
   if (input != null && input.length > 0) {
-    client.execute(input,
+    
+    console.log("SEARCHING GHEE..." + input);
+    
+    client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" +
+     input,
     
     function(error, result) {
       if (error)
@@ -47,8 +51,12 @@ router.get('/results', function(req, res, next) {
         console.log(result.result);
       
       var array = result.result.split("/n");
+      console.log("ENTRIES...");
+      array.forEach(function(entry) {
+        console.log(entry);
+      });
       
-      res.render('results', { title: 'Search Archives', res: result.result, srch: req.query.srch});
+      res.render('results', { title: 'Search Archives', res: array, srch: req.query.srch});
     }); 
   }
   // No search
@@ -89,7 +97,7 @@ router.get("/browse", function(req, res, next) {
     console.log("PATH BROWSE: " + findPathOfAuthor(authors[i]));
   }
   
-  res.render('list', { title: 'Browse', authors: authors, paths: paths });
+  res.render('browse', { title: 'Browse', authors: authors, paths: paths });
 });
 
 function findPathOfAuthor(author) {
@@ -120,7 +128,8 @@ function findPathOfAuthor(author) {
   return path;
 }
 
-// http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
+// http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; 
+// (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
 
 /* HELPER FUNCTIONS */
 
@@ -136,6 +145,10 @@ function fullUrl(req) {
 }
 
 function decodeInput(search) {
+  
+  if (search == null)
+    return search;
+  
   if (isXQuery(search))
     return search;
   
