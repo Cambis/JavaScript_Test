@@ -101,6 +101,7 @@ router.get("/browse", function(req, res, next) {
   res.render('browse', { title: 'Browse', authors: authors, paths: paths });
 });
 
+// "for $n in (//title = title//) return db:path($n)"
 function findPathOfAuthor(author) {
   
   console.log("AUTHOR: " + author);
@@ -133,9 +134,6 @@ function findPathOfAuthor(author) {
 // (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
 
 /* HELPER FUNCTIONS */
-
-var url = require('url');
-
 /* Find the URL of a request */
 function fullUrl(req) {
   return url.format({
@@ -145,22 +143,46 @@ function fullUrl(req) {
   });
 }
 
+/* Decode the input to parse to basex */
 function decodeInput(search) {
   
-  if (search == null)
-    return search;
+  console.log("DECODING INPUT... ");
   
-  if (isXQuery(search))
+  // Bad search or no search
+  if (search == null) {
+    console.log("SEARCH IS NULL");
     return search;
+  }
+  
+  // XQuery (#xquery)
+  else if (contains(search, "xquery")) {
+    console.log("SEARCH IS #XQUERY");
+    return search;
+  }
+  
+  // Specific title (#title)
+  else if (contains(search, "title")) {
+    
+    console.log("SEARCH IS #TITLE");
+    
+    var title = search.split("#");
+    title = title[0];
+    
+    console.log("TITLE: " + title);
+    return "for $n in (//title = " + title + "//) return db:path($n)"
+  }
   
   // TODO need to change this for plain text
+  // Plain text (#plain)
+  console.log("SEARCH IS #PLAIN");
   return search;
 }
 
-/* Decode the search to see if it is xquery */
-function isXQuery(search) {
+/* Decode the search to see what key it contains */
+function contains(search, item) {
+  console.log("SEARCH: " + search);
   var urlArray = search.split("#");
-  return urlArray.length > 2 && (urlArray.indexOf(search) > -1);
+  return urlArray.length > 2 && (urlArray.indexOf(item) > -1);
 }
 
 module.exports = router;
