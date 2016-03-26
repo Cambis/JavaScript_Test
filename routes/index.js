@@ -50,13 +50,14 @@ router.get('/results', function(req, res, next) {
       else
         console.log(result.result);
       
-      var array = result.result.split("/n");
+      var resultsArray = result.result.split("\n");
       console.log("ENTRIES...");
-      array.forEach(function(entry) {
+      
+      resultsArray.forEach(function(entry) {
         console.log(entry);
       });
       
-      res.render('results', { title: 'Search Archives', res: array, srch: req.query.srch});
+      res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch});
     }); 
   }
   // No search
