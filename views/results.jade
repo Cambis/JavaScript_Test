@@ -1,3 +1,4 @@
+
 extends ../node_modules/jade-bootstrap/_bootstrap 
 
 head
@@ -25,7 +26,7 @@ block body
                   a(href='#plain', data-value='plain') Plain Text
                 |           
                 li
-                  a(href='#xquery', data-value='xquery') XQuery
+                  a(href='#xquery', data-value='xquery', id='xquery', onclick='something()') XQuery
                 |                 
             input#srch.form-control(type='text', placeholder='Search', name='srch')
             |       
@@ -34,11 +35,14 @@ block body
                 i.glyphicon.glyphicon-search
   .container
     .panel.panel-default
-      .panel.heading #{res.length}
+      .panel.heading #{res.length} results for "#{srch}" 
       .panel-body
         .list-group
           each button_id in res
-            a.list-group-item(href="#{button_id}") #{button_id} 
-
+            a.list-group-item(href="results?srch=#{button_id}#title") #{button_id}
+  script.
+    var something = function() {
+      console.log('something')
+    }
   //
   
