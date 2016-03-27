@@ -35,6 +35,7 @@ router.get('/results', function(req, res, next) {
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
   console.log("INPUT: " + input + " URL: " + fullUrl(req));
+  console.log("PATH: " + req.query.url);
   
 //   // If there is a search
   if (input != null && input.length > 0) {
@@ -160,16 +161,21 @@ function decodeInput(search) {
     return search;
   }
   
-  // Specific title (#title)
-  else if (contains(search, "title")) {
+  // Specific title (?title)
+  else if (contains(search, "?title")) {
     
-    console.log("SEARCH IS #TITLE");
+    console.log("SEARCH IS ?TITLE");
     
-    var title = search.split("#");
-    title = title[0];
+    var titleArray = search.split("?");
+    var title = titleArray[0];
     
     console.log("TITLE: " + title);
-    return "for $n in (//title = " + title + "//) return db:path($n)"
+    // return "for $n in (//title[.= " + title + "]/text()) return db:path($n)"
+  
+   return "for $file in collection('Colenso_TEIs')" +
+          "where $file //title[.= '" + title + "']" +
+          "return db:path($file)";
+    
   }
   
   // TODO need to change this for plain text
@@ -179,10 +185,11 @@ function decodeInput(search) {
 }
 
 /* Decode the search to see what key it contains */
-function contains(search, item) {
-  console.log("SEARCH: " + search);
-  var urlArray = search.split("#");
-  return urlArray.length > 2 && (urlArray.indexOf(item) > -1);
+function contains(string, substring) {
+  console.log("SEARCH: " + string);
+  // var urlArray = search.split("?");
+  // return urlArray.length > 2 && (urlArray.indexOf(item) > -1);
+  return string.indexOf(substring) > -1;
 }
 
 module.exports = router;

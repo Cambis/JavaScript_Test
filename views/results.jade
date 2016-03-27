@@ -6,6 +6,7 @@ head
   srch = srch
   res = res
 block body
+
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/") Home
     +nav_item("/browse") Browse
@@ -26,7 +27,7 @@ block body
                   a(href='#plain', data-value='plain') Plain Text
                 |           
                 li
-                  a(href='#xquery', data-value='xquery', id='xquery', onclick='something()') XQuery
+                  a(href='#xquery', data-value='xquery', id='xquery', onclick='bleh()') XQuery
                 |                 
             input#srch.form-control(type='text', placeholder='Search', name='srch')
             |       
@@ -34,15 +35,19 @@ block body
               button.btn.btn-default(type='submit')
                 i.glyphicon.glyphicon-search
   .container
+    h1 #{type}
+  .container
     .panel.panel-default
       .panel.heading #{res.length} results for "#{srch}" 
       .panel-body
         .list-group
           each button_id in res
-            a.list-group-item(href="results?srch=#{button_id}#title") #{button_id}
-  script.
-    var something = function() {
-      console.log('something')
+            a.list-group-item(href="results?srch=#{button_id}?title") #{button_id}
+            
+  
+   script(type='text/javascript').
+    function bleh() {
+      var type = '?xquery';
+      alert("BEH");
     }
-  //
   
