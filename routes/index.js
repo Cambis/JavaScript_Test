@@ -29,13 +29,16 @@ client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/n
 /* SEARCH. */
 router.get('/results', function(req, res, next) {
   
+  // XQUERY db:is-xml('Colenso', '" + path + "')";
+  // XQUERY doc('Colenso_TEIs/" + path + "')";
+  
   var input = decodeInput(req.query.srch);
   
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
   console.log("INPUT: " + input + " URL: " + fullUrl(req));
-  console.log("PATH: " + req.query.url);
+  console.log("PATH: " + req.query.path);
   
 //   // If there is a search
   if (input != null && input.length > 0) {
@@ -46,19 +49,47 @@ router.get('/results', function(req, res, next) {
      input,
     
     function(error, result) {
+      
+      var isXML = false;
+      
       if (error)
         console.log(error);
       else
-        console.log(result.result);
+        console.log("SEARCH RESULT: " + result.result);
       
-      var resultsArray = result.result.split("\n");
-      console.log("ENTRIES...");
-      
-      resultsArray.forEach(function(entry) {
-        console.log(entry);
+      // Check if it is a xml document 
+      client.execute("XQUERY db:is-xml('Colenso', '" + result.result + "')", 
+      function(error, xmlResult) {
+        if (error)
+          console.log(error);
+        else
+          console.log("IS XML? " + result.result);
+        
+        if (xmlResult.result == 'true') {
+          isXML = true;
+          console.log("OMG, XML!!!");
+          client.execute("XQUERY doc('Colenso_TEIs/" + result.result + "')",
+          function(error, result) {
+            if (error)
+              console.log(error);
+            else 
+              console.log(result);
+            
+            res.render('file', {title: 'Search Archives', content: result.result });
+            return;
+          });
+        } else {
+                
+          var resultsArray = result.result.split("\n");
+          console.log("ENTRIES...");
+          
+          resultsArray.forEach(function(entry) {
+            console.log(entry);
+          });
+          
+          res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch});
+        }
       });
-      
-      res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch});
     }); 
   }
   // No search
@@ -79,27 +110,29 @@ router.get("/browse", function(req, res, next) {
   var paths = [];
   
   if (!path)
-    path = " distinct-values (//author/name[@type='person']/text())";
+    path = "distinct-values (//author/name[@type='person']/text())";
   
-  client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" + path, 
+  client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" + 
+  path, 
   
   function(error, result) { 
     
     if(!error) 
-      console.log(res.result)
+      console.log("BROWSE " + result.result)
     else
       console.error(error);
     
     authors = result.result.split("\n");
+    console.log("THERE ARE " + authors.length + " AUTHORS");
+  // });
+  
+    for (var i = 0; i < authors.length; i++) {
+      console.log("AUTHOR BROWSE: " + authors[i]);
+      paths.push(findPathOfAuthor(authors[i]));
+      console.log("PATH BROWSE: " + findPathOfAuthor(authors[i]));
+    }
+    res.render('browse', { title: 'Browse', authors: authors, paths: paths });
   });
-  
-  for (i = 0; i < authors.length; i++) {
-    console.log("AUTHOR BROWSE: " + authors[i]);
-    paths.push(findPathOfAuthor(authors[i]));
-    console.log("PATH BROWSE: " + findPathOfAuthor(authors[i]));
-  }
-  
-  res.render('browse', { title: 'Browse', authors: authors, paths: paths });
 });
 
 // "for $n in (//title = title//) return db:path($n)"
