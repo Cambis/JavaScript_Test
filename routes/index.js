@@ -105,36 +105,51 @@ router.get("/browse", function(req, res, next) {
   
   //db:list('Colenso_TEIs', path);
   
-  var path = req.query.path;
+  var path = decodeInput(req.query.srch);
   var authors = [];
-  var paths = [];
   
   if (!path)
     path = "distinct-values (//author/name[@type='person']/text())";
+  
+  console.log("PATH: " + path);
   
   client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" + 
   path, 
   
   function(error, result) { 
     
-    if(!error) 
-      console.log("BROWSE " + result.result)
+    if(!error) {
+      console.log("BROWSE: " + result.result)
+    }
     else
       console.error(error);
     
-    authors = result.result.split("\n");
+    authors = result.result.toString().split("\n");
     console.log("THERE ARE " + authors.length + " AUTHORS");
   // });
   
+    // Find the depth of the directory
+    var depth = (path != 'undefined' && path != "distinct-values (//author/name[@type='person']/text())") 
+    ? result.result.toString()[0].split("/").length : 0;
+    
+    console.log("DEPTH: " + depth);
+    
     for (var i = 0; i < authors.length; i++) {
+      authors[i] = authors[i].split("/")[depth];
       console.log("AUTHOR BROWSE: " + authors[i]);
-      paths.push(findPathOfAuthor(authors[i]));
-      console.log("PATH BROWSE: " + findPathOfAuthor(authors[i]));
     }
-    res.render('browse', { title: 'Browse', authors: authors, paths: paths });
+    
+    // Filter the list
+    authors = authors.filter( onlyUnique );
+    
+    if (path != "distinct-values (//author/name[@type='person']/text())")
+      path += "/";
+    
+    res.render('browse', { title: 'Browse', authors: authors});
   });
 });
 
+// XXX: do not use me
 // "for $n in (//title = title//) return db:path($n)"
 function findPathOfAuthor(author) {
   
@@ -194,6 +209,17 @@ function decodeInput(search) {
     return search;
   }
   
+  // Author (?author)
+  else if (contains(search, "?author")) {
+    console.log("SEARCH IS ?AUTHOR");
+    
+    var authorArray = search.split("?");
+    var author = authorArray[0];
+    
+    return "for $file in (//author/name[@type='person' and .='" + author + "'])" +
+           "return db:path($file)";
+  }
+  
   // Specific title (?title)
   else if (contains(search, "?title")) {
     
@@ -205,7 +231,7 @@ function decodeInput(search) {
     console.log("TITLE: " + title);
     // return "for $n in (//title[.= " + title + "]/text()) return db:path($n)"
   
-   return "for $file in collection('Colenso_TEIs')" +
+   return "for $file in collection('Colenso')" +
           "where $file //title[.= '" + title + "']" +
           "return db:path($file)";
     
@@ -223,6 +249,10 @@ function contains(string, substring) {
   // var urlArray = search.split("?");
   // return urlArray.length > 2 && (urlArray.indexOf(item) > -1);
   return string.indexOf(substring) > -1;
+}
+
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
 }
 
 module.exports = router;
