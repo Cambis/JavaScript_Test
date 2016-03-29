@@ -7,6 +7,8 @@ var url = require('url');
 var XmlStream = require('xml-stream');
 var http = require('http');
 
+var isXQuery = false;
+
 /* GET home page. */
 // router.get('/', function(req, res, next) {
 //   res.render('index', { title: 'Express' });
@@ -34,7 +36,7 @@ router.get('/results', function(req, res, next) {
   // XQUERY db:is-xml('Colenso', '" + path + "')";
   // XQUERY doc('Colenso_TEIs/" + path + "')";
   
-  var input = decodeInput(req.query.srch);
+  var input = decodeInput(req.query.srch + "?" + (isXQuery ? "xquery" : "plain"));
   var path = req.query.path;
   
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
@@ -53,7 +55,7 @@ router.get('/results', function(req, res, next) {
     
     function(error, result) {
       
-      var isXML = false;
+      console.log("HEY XQUERY IS " + isXQuery + " eh");
       
       if (error)
         console.log(error);
@@ -216,57 +218,15 @@ router.get('/edit/:name', function(req, res) {
   
   
 });
-/* DOWNLOAD 
-// I think I went over board with this...
-router.get("/download", function(req, res, next) {
-  
-  var request = http.get(url).on('response', function(response) {
-    
-    // Store documents here
-    var documents = {};
-    
-    var processDocument = function(item) {
-      
-      // Collect document properties
-      var document = {};
-      document.type = item.$name;
-      document.title = item['dc:title'];
-      document.date = item['dc:date'];
-      document.verURL = item.$['rdf:about'];
-      document.trURL = item['doc:versionOf'].$['rdf:resource'];
 
-      // If we have already seen a version of this document
-      if (documents[document.trURL]) {
-	  // Check to see if this one is newer and if so overwrite it
-	  var old = documents[document.trURL];
-	  if (old.date < document.date) {
-	      documents[document.trURL] = document;
-	  }
-      } else {
-	  // Store the new entry
-	  documents[document.trURL] = document;
-      }
-    };
-    
-    var xml = new XmlStream(response, 'utf8');
-    
-    // Process each type of document
-    xml.on('updateElement: WD', processDocument);
-    xml.on('updateElement: LastCall', processDocument);
-    xml.on('updateElement: CR', processDocument);
-    xml.on('updateElement: PR', processDocument);
-    xml.on('updateElement: REC', processDocument);
-    xml.on('updateElement: NOTE', processDocument);
-
-    xml.on('end', function () {
-        
-	// Write out JSON data of documents collection
-        console.log(JSON.stringify(documents));
-    });
-  });
+router.get('/xquery', function(req, res) {
+  isXQuery = true;
 });
 
-*/
+router.get('/plain', function(req, res) {
+  isXQuery = false;
+});
+
 // http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; 
 // (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
 
@@ -288,12 +248,6 @@ function decodeInput(search) {
   // Bad search or no search
   if (search == null) {
     console.log("SEARCH IS NULL");
-    return search;
-  }
-  
-  // XQuery (#xquery)
-  else if (contains(search, "xquery")) {
-    console.log("SEARCH IS #XQUERY");
     return search;
   }
   
@@ -325,9 +279,24 @@ function decodeInput(search) {
     
   }
   
-  // TODO need to change this for plain text
-  // Plain text (#plain)
-  console.log("SEARCH IS #PLAIN");
+  // XQuery (?xquery)
+  else if (contains(search, "?xquery")) {
+    console.log("SEARCH IS ?XQUERY");
+    return search.replace("?xquery", "");
+  }
+  
+  // Plain Text (?plain)
+  else if (contains(search, "?plain")) {
+     console.log("SEARCH IS ?PLAIN");
+     
+     var query = search.replace("?plain", "");
+     
+     return "for $file in collection('Colenso')" +
+            "where $file //title[.= '" + query + "']" || 
+            "$file //author/name[.= '" + query + "']" ||
+            "return db:path($file)";
+  }
+  
   return search;
 }
 
