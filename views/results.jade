@@ -2,9 +2,12 @@
 extends ../node_modules/jade-bootstrap/_bootstrap 
 
 head
+
   title= title
   srch= srch
-  res(value= res, id= 'eh')
+  res= res
+  path= path
+  
 block body
 
   - var type = '?xquery'

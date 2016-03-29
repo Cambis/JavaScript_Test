@@ -4,6 +4,8 @@ head
 
   title= title
   content= content
+  path= path
+  name= name
 
 block body
 
@@ -17,6 +19,9 @@ block body
       panel.panel-default
       .panel-body
         ul.nav.nav-tabs
+          a.btn.pull-right.btn-info.btn-lg(href="/download/#{name}?path=#{path}" download="#{name}", type='button')
+            span.glyphicon.glyphicon-download-alt
+            |  Download
           li.active
             a(data-toggle='tab', href='#plain') Plain Text
           |   
@@ -38,12 +43,10 @@ block body
           |   
           #edit.tab-pane.fade
             h3 Edit
-            |     
-            form(role='form')
-              .form-group
-                label(for='edit') :
-                |     
-                input#edit.form-control(type='edit')
+            a.btn.pull-right.btn-info.btn-lg(href='#')
+              span.glyphicon.glyphicon-save
+              |  Save Changes
+            textarea.form-control(id= "text-field", rows= "24") #{content}
             
 
   

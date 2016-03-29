@@ -4,6 +4,8 @@ var cheerio = require('cheerio');
 var basex = require('basex');
 var client = new basex.Session("127.0.0.1", 1984, "admin", "admin");
 var url = require('url');
+var XmlStream = require('xml-stream');
+var http = require('http');
 
 /* GET home page. */
 // router.get('/', function(req, res, next) {
@@ -33,12 +35,13 @@ router.get('/results', function(req, res, next) {
   // XQUERY doc('Colenso_TEIs/" + path + "')";
   
   var input = decodeInput(req.query.srch);
+  var path = req.query.path;
   
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
   console.log("INPUT: " + input + " URL: " + fullUrl(req));
-  console.log("PATH: " + req.query.path);
+  console.log("PATH: " + path);
   
 //   // If there is a search
   if (input != null && input.length > 0) {
@@ -56,6 +59,10 @@ router.get('/results', function(req, res, next) {
         console.log(error);
       else
         console.log("SEARCH RESULT: " + result.result);
+      
+      // Get the filepath and filename of the document
+      var filepath = result.result;
+      var filename = filepath.split("/")[(filepath.split("/").length - 1)];
       
       // Check if it is a xml document 
       client.execute("XQUERY db:is-xml('Colenso', '" + result.result + "')", 
@@ -75,7 +82,10 @@ router.get('/results', function(req, res, next) {
             else 
               console.log(result);
             
-            res.render('file', {title: 'Search Archives', content: result.result });
+	    console.log("FILEPATH: " + filepath);
+	    console.log("FILENAME: " + filename);
+	    
+            res.render('file', {title: 'Search Archives', content: result.result, path: filepath, name: filename });
             return;
           });
         } else {
@@ -87,14 +97,14 @@ router.get('/results', function(req, res, next) {
             console.log(entry);
           });
           
-          res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch});
+          res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch, path: path});
         }
       });
     }); 
   }
   // No search
   else {
-    res.render('results', { title: 'Search Archives', res: '', srch: '' });
+    res.render('results', { title: 'Search Archives', res: '', srch: '', path: '' });
     console.log("NO SEARCH");
   }
   
@@ -179,6 +189,67 @@ function findPathOfAuthor(author) {
   return path;
 }
 
+/* DOWNLOAD */
+router.get('/download/:name', function(req, res) {
+  var filepath = req.query.path;
+  console.log("PATH: " + filepath);
+  var input = "XQUERY doc('Colenso/" + filepath + "')";
+  client.execute(input,function(error, result) {
+    console.log("RESULT: " + result.result);
+    res.send(result.result);
+  });
+});
+/* DOWNLOAD 
+// I think I went over board with this...
+router.get("/download", function(req, res, next) {
+  
+  var request = http.get(url).on('response', function(response) {
+    
+    // Store documents here
+    var documents = {};
+    
+    var processDocument = function(item) {
+      
+      // Collect document properties
+      var document = {};
+      document.type = item.$name;
+      document.title = item['dc:title'];
+      document.date = item['dc:date'];
+      document.verURL = item.$['rdf:about'];
+      document.trURL = item['doc:versionOf'].$['rdf:resource'];
+
+      // If we have already seen a version of this document
+      if (documents[document.trURL]) {
+	  // Check to see if this one is newer and if so overwrite it
+	  var old = documents[document.trURL];
+	  if (old.date < document.date) {
+	      documents[document.trURL] = document;
+	  }
+      } else {
+	  // Store the new entry
+	  documents[document.trURL] = document;
+      }
+    };
+    
+    var xml = new XmlStream(response, 'utf8');
+    
+    // Process each type of document
+    xml.on('updateElement: WD', processDocument);
+    xml.on('updateElement: LastCall', processDocument);
+    xml.on('updateElement: CR', processDocument);
+    xml.on('updateElement: PR', processDocument);
+    xml.on('updateElement: REC', processDocument);
+    xml.on('updateElement: NOTE', processDocument);
+
+    xml.on('end', function () {
+        
+	// Write out JSON data of documents collection
+        console.log(JSON.stringify(documents));
+    });
+  });
+});
+
+*/
 // http://localhost:3000/XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0'; 
 // (//title[../author/name[@type='person' and .='Joseph Dalton Hooker']]/text())
 
