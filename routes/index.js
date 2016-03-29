@@ -191,13 +191,30 @@ function findPathOfAuthor(author) {
 
 /* DOWNLOAD */
 router.get('/download/:name', function(req, res) {
+  
   var filepath = req.query.path;
-  console.log("PATH: " + filepath);
-  var input = "XQUERY doc('Colenso/" + filepath + "')";
-  client.execute(input,function(error, result) {
-    console.log("RESULT: " + result.result);
+  var input = "XQUERY doc('Colenso_TEIs/" + filepath + "')";
+  
+  client.execute(input, function(error, result) {
     res.send(result.result);
   });
+});
+
+/* EDIT */
+router.get('/edit/:name', function(req, res) {
+  
+  var filepath = req.query.path;
+  
+  // This needs to be the edited file
+  var filename = filepath.split("/")[(filepath.split("/").length - 1)];
+  
+  console.log("FILE TO BE OVERWRITTEN: " + filename);
+  var input = "XQUERY xmldb:remove(Colenso, 'Colenso_TEIs/" + filepath + "');" +
+  "XQUERY xmldb:store(Colenso, 'Colenso_TEIs/" + filename + "')";
+  console.log("IN HERE CUZ");
+  
+  
+  
 });
 /* DOWNLOAD 
 // I think I went over board with this...
