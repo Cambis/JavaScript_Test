@@ -1,0 +1,20 @@
+extends ../node_modules/jade-bootstrap/_bootstrap
+
+head
+  title = title
+  authors = authors
+block body
+  +navbar("The Colenso Project", "dropdown_menu")
+    +nav_item("/") Home
+    +nav_item("/browse", "active") Browse
+    +nav_item("/results") Search
+  .container
+    h1 #{title}
+  .container
+    .panel.panel-default
+      .panel.heading #{title}
+      .panel-body
+        .list-group
+          each button_id in authors
+            a.list-group-item(href="browse?srch=#{button_id}?author") #{button_id} 
+        

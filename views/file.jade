@@ -1,0 +1,49 @@
+extends ../node_modules/jade-bootstrap/_bootstrap 
+
+head
+
+  title= title
+  content= content
+
+block body
+
+  +navbar("The Colenso Project", "dropdown_menu")
+      +nav_item("/") Home
+      +nav_item("/browse") Browse
+      +nav_item("/results", "active") Search
+    .container
+      h1 #{title}
+    .container
+      panel.panel-default
+      .panel-body
+        ul.nav.nav-tabs
+          li.active
+            a(data-toggle='tab', href='#plain') Plain Text
+          |   
+          li
+            a(data-toggle='tab', href='#xquery') XQuery
+          |   
+          li
+            a(data-toggle='tab', href='#edit') Edit
+        .tab-content
+          #plain.tab-pane.fade.in.active
+            h3 Plain Text
+            |     
+            p !{content}.
+          |   
+          #xquery.tab-pane.fade
+            h3 XQuery
+            |     
+            p #{content}.
+          |   
+          #edit.tab-pane.fade
+            h3 Edit
+            |     
+            form(role='form')
+              .form-group
+                label(for='edit') :
+                |     
+                input#edit.form-control(type='edit')
+            
+
+  

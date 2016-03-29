@@ -2,11 +2,13 @@
 extends ../node_modules/jade-bootstrap/_bootstrap 
 
 head
-  title = title
-  srch = srch
-  res = res
+  title= title
+  srch= srch
+  res(value= res, id= 'eh')
 block body
 
+  - var type = '?xquery'
+  
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/") Home
     +nav_item("/browse") Browse
@@ -27,7 +29,7 @@ block body
                   a(href='#plain', data-value='plain') Plain Text
                 |           
                 li
-                  a(href='#xquery', data-value='xquery', id='xquery', onclick='bleh()') XQuery
+                  a(href='#xquery', value='?xquery', id='xquery', onclick='bleh()') XQuery
                 |                 
             input#srch.form-control(type='text', placeholder='Search', name='srch')
             |       
@@ -40,14 +42,25 @@ block body
     .panel.panel-default
       .panel.heading #{res.length} results for "#{srch}" 
       .panel-body
-        .list-group
+        .list-group(id= "buttons")
           each button_id in res
             a.list-group-item(href="results?srch=#{button_id}?title") #{button_id}
             
   
    script(type='text/javascript').
+    var num = null;
     function bleh() {
-      var type = '?xquery';
-      alert("BEH");
+      
+      var tag = "?xquery";
+      
+      var buttonsList = document.getElementById("buttons");
+      alert(buttonsList[0]);
+      
+      buttonsList.forEach(function(entry) {
+        document.getElementById(entry).href = "results?srch=#{button_id}?title?xquery";
+        alert("myGod");
+      });
+      
+      return false;
     }
   
