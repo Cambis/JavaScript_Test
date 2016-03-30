@@ -40,6 +40,7 @@ router.get('/results', function(req, res, next) {
   
   var input = decodeInput(req.query.srch + "?" + (isXQuery ? "xquery" : "plain"));
   
+  // console.log("INPUT LENGTH: " + input.length);
   // client.execute("XQUERY declare namespace tei='http://www.tei-c.org/ns/1.0'; " +
   // "(collection('Colenso_TEIs/Colenso/private_letters')//tei:p[position() = 1])",
   
@@ -92,7 +93,7 @@ router.get('/results', function(req, res, next) {
           
           var resultsArray = result.result.split("\n");
         
-          res.render('results', { title: 'Search Archives', res: resultsArray, srch: req.query.srch});        
+          res.render('results', { title: 'Search Archives', res: resultsArray, srch: (error ? "Bad Input: " + input : req.query.srch)});        
         });
       }
    });
@@ -117,39 +118,69 @@ router.get("/browse", function(req, res, next) {
   
   console.log("PATH: " + path);
   
-  client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" + 
-  path, 
-  
-  function(error, result) { 
+  // Check if it is a xml document 
+  client.execute("XQUERY db:is-xml('Colenso', '" + path + "')", 
+  function(error, xmlResult) {
     
-    if(!error) {
-      console.log("BROWSE: " + result.result)
+    if (error)
+      console.log(error);
+    
+    if (xmlResult.result == 'true') {
+      
+      isXML = true;
+      
+      console.log("OMG, XML!!!");
+      
+      // Get the filepath and filename of the document
+      var filepath = path;
+      var filename = filepath.split("/")[(filepath.split("/").length - 1)];
+      
+      client.execute("XQUERY doc('Colenso_TEIs/" + path + "')",
+      function(error, result) {
+      
+        if (error)
+          console.log(error);
+        else 
+          console.log(result);
+        
+        res.render('file', {title: 'Browse Archives', content: result.result, path: filepath, name: filename });
+        return;
+      });
+    } else {
+      
+      console.log("PATH NORMAL: " + path);
+      // Otherwise continue as normal
+      client.execute("XQUERY declare default element namespace 'http://www.tei-c.org/ns/1.0';" + 
+      path, 
+      
+      function(error, result) { 
+        
+        if(!error) {
+          console.log("BROWSE: " + result.result)
+        }
+        else
+          console.error(error);
+        
+        authors = result.result.toString().split("\n");
+        console.log("THERE ARE " + authors.length + " AUTHORS");
+      // });
+      
+        // Find the depth of the directory
+        
+        for (var i = 0; i < authors.length; i++) {
+          // authors[i] = authors[i].split("/")[depth];
+          // console.log("AUTHOR BROWSE: " + authors[i]);
+        }
+        
+        // Filter the list
+        authors = authors.filter( onlyUnique );
+        
+        if (path != "distinct-values (//author/name[@type='person']/text())")
+          path += "/";
+        
+        res.render('browse', { title: 'Browse Archives', authors: authors, path: path});
+      });
     }
-    else
-      console.error(error);
-    
-    authors = result.result.toString().split("\n");
-    console.log("THERE ARE " + authors.length + " AUTHORS");
-  // });
-  
-    // Find the depth of the directory
-    var depth = (path != 'undefined' && path != "distinct-values (//author/name[@type='person']/text())") 
-    ? result.result.toString()[0].split("/").length : 0;
-    
-    console.log("DEPTH: " + depth);
-    
-    for (var i = 0; i < authors.length; i++) {
-      authors[i] = authors[i].split("/")[depth];
-      console.log("AUTHOR BROWSE: " + authors[i]);
-    }
-    
-    // Filter the list
-    authors = authors.filter( onlyUnique );
-    
-    if (path != "distinct-values (//author/name[@type='person']/text())")
-      path += "/";
-    
-    res.render('browse', { title: 'Browse', authors: authors});
   });
 });
 
@@ -165,20 +196,48 @@ router.get('/download/:name', function(req, res) {
 });
 
 /* EDIT */
-router.get('/edit/:name', function(req, res) {
+router.get('/edit/*', function(req, res) {
   
-  var filepath = req.query.path;
+  console.log("EDITING!!!!");
   
-  // This needs to be the edited file
-  var filename = filepath.split("/")[(filepath.split("/").length - 1)];
+  var editedText = req.body.editBox
+  var path = req.params[0];
+  console.log(editedText);
   
-  console.log("FILE TO BE OVERWRITTEN: " + filename);
-  var input = "XQUERY xmldb:remove(Colenso, 'Colenso_TEIs/" + filepath + "');" +
-  "XQUERY xmldb:store(Colenso, 'Colenso_TEIs/" + filename + "')";
-  console.log("IN HERE CUZ");
+  if(editedText) {
+    
+    var input = 'REPLACE ' + path + ' "' + editedText + '"';
+    
+    client.execute(input, function(error, result) {
+   
+      if(error)
+        console.log(error);
+      else
+        console.log(result);
+    });
+  }
+});
+
+/* UPLOAD */
+router.post('/upload', function(req, res, next) {
   
+  var file = req.file;
+  var targetLoc = req.query.title;
+  console.log("FILE PATH: " + targetLoc);
   
-  
+  if(file) {
+    
+    var input = 'REPLACE ' + targetLoc + file.originalname + ' "' 
+    + file.buffer.toString() + '"';
+    client.execute(input, function(error, result) {
+      
+      if(error)
+        console.log(error);
+      else
+        console.log(result);
+      
+    });
+  }
 });
 
 router.get('/xquery', function(req, res) {
@@ -217,8 +276,12 @@ function decodeInput(search) {
   else if (contains(search, "?author")) {
     console.log("SEARCH IS ?AUTHOR");
     
-    var authorArray = search.split("?");
-    var author = authorArray[0];
+    var author = removeTags(search);
+    console.log("AUTHOR TAG: " + author);
+    
+    // Special case
+    if (contains(author, ".xml"))
+      return author;
     
     return "for $file in (//author/name[@type='person' and .='" + author + "'])" +
            "return db:path($file)";
@@ -229,7 +292,9 @@ function decodeInput(search) {
     
     console.log("SEARCH IS ?TITLE");
     // Remove tags
-    search = removeTags(search);
+    
+    refinedSearch = removeTags(search);
+    
     // first check if it is an xml
     
 //     console.log("SEARCH IS THIS: " + search);
@@ -263,12 +328,12 @@ function decodeInput(search) {
 //     
 //     console.log("SEARCH IS ?TITLE");
     
-//     if (!contains(search, "/"))
-//       return "for $file in collection('Colenso')" +     
-//              "where $file //title[.= '" + search + "']" +
-//              "return db:path($file)";
+     if (!contains(search, "/") && contains(search, "?xquery"))
+       return "for $file in collection('Colenso')" +     
+              "where $file //title[.= '" + refinedSearch + "']" +
+              "return db:path($file)";
       
-      return search;
+      return refinedSearch;
 //     var title = search;
 //     console.log("TITLE: " + title);
 //     // return "for $n in (//title[.= " + title + "]/text()) return db:path($n)"
@@ -294,11 +359,14 @@ function decodeInput(search) {
   else if (contains(search, "?plain")) {
      console.log("SEARCH IS ?PLAIN");
      
+    if (search == null)
+      return search;
+      
      var query = search.replace("?plain", "");
      console.log("SEARCHING FOR: " + query);
      //  "$file //author/name[.= '" + query + "'])" +
      
-     var beh = "for $file in (/TEI[. contains text '" + query + "' using wildcards])" + 
+     var beh = "for $file in (/TEI[. contains text " + parsePlainSearch(query) + " using wildcards])" + 
                "return db:path($file)";
      
      // beh = "/TEI[. contains text '" + query + "']";
@@ -308,7 +376,7 @@ function decodeInput(search) {
 //        if (!err)
 //          console.log(res);
 //      });
-           
+     
      return DEFAULT_NAMESPACE + beh;
      
      // "/TEI[. contains text 'natives' ftand 'Elizabeth']"
@@ -328,19 +396,56 @@ function removeTags(string) {
   if (contains(string, "?title"))
     string = string.replace("?title", "");
   
+  if (contains(string, "?author"))
+    string = string.replace("?author", "");
+  
   return string;
 }
 
 /* Decode the search to see what key it contains */
 function contains(string, substring) {
-  // console.log("SEARCH: " + string);
-  // var urlArray = search.split("?");
-  // return urlArray.length > 2 && (urlArray.indexOf(item) > -1);
   return string.indexOf(substring) > -1;
 }
 
 function onlyUnique(value, index, self) { 
-    return self.indexOf(value) === index;
+  return self.indexOf(value) === index;
+}
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
+
+String.prototype.splice = function(idx, rem, str) {
+    return this.slice(0, idx) + str + this.slice(idx + Math.abs(rem));
+};
+
+function parsePlainSearch(string) {
+  
+  var array = string.split(/(\s+)/);
+  
+  string = "'" + string;
+  
+  var special = false;
+  
+  if (array[0].charAt(0) == '-') {
+    special = true;
+    string = array[0].splice(1, 0, "'");
+  }
+  
+  string = string.replaceAll(" && ", " 'ftand' ");
+  string = string.replaceAll(" || ", " 'ftor' ");
+  string = string.replaceAll("&&", " 'ftand' ");
+  string = string.replaceAll("||", " 'ftor' ");
+  string = string.replaceAll(" -", " 'ftnot' ");
+  string = string.replaceAll("-", " 'ftnot' ");
+  string += "'";
+  
+  // Special case
+  if (special)
+    string = string.replace("'ftnot'", "ftnot");
+  
+  return string;
 }
 
 module.exports = router;

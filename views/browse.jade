@@ -1,9 +1,13 @@
 extends ../node_modules/jade-bootstrap/_bootstrap
 
 head
-  title = title
-  authors = authors
+
+  title= title
+  authors= authors
+  path= path
+
 block body
+
   +navbar("The Colenso Project", "dropdown_menu")
     +nav_item("/") Home
     +nav_item("/browse", "active") Browse
@@ -16,5 +20,10 @@ block body
       .panel-body
         .list-group
           each button_id in authors
-            a.list-group-item(href="browse?srch=#{button_id}?author") #{button_id} 
+            a.list-group-item(href="browse?srch=#{button_id}?author") #{button_id}
+   .container
+    h2 Upload A File
+    form(enctype='multipart/form-data', action='/upload?path=#{authors}', method='post')
+      input#file(type='file', name='uploadedFile')
+      button.btn.btn-default(type='submit') Submit
         

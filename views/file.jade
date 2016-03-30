@@ -43,10 +43,12 @@ block body
           |   
           #edit.tab-pane.fade
             h3 Edit
-            a.btn.pull-right.btn-info.btn-lg(href="/edit/#{name}?path=#{path}" edit="#{name}", type='button')
-              span.glyphicon.glyphicon-save
-              |  Save Changes
-            textarea.form-control(id= "text-field", rows= "24") #{content}
-            
+            form(action='edit/#{path}', method='post')
+            .panel-body
+              textarea.form-control(name="editBox", rows="25") #{content}
+            .panel-body
+              button.btn.btn-success.pull-right(type='submit', aria-label='Download')
+                span.glyphicon.glyphicon-save()
+                | Save Changes
 
   
